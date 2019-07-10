@@ -24,7 +24,7 @@ DFA::DFA(const RegexTree& tree) {
       dstates[i].first->MakeAcceptState();
     }
 
-    for (const auto& character : tree.Alphabet()) {
+    for (auto character : alphabet) {
       std::unordered_set<std::size_t> new_next_positions;
       for (auto next_pos : dstates[i].second) {
         if (tree.CharAtPos(next_pos) == character) {
@@ -50,6 +50,7 @@ DFA::DFA(const RegexTree& tree) {
       }
     }
   }
+
   // move the states ownership to the DFA
   for (auto& state : dstates) states.emplace_back(std::move(state.first));
 }

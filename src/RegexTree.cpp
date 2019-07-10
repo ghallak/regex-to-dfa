@@ -9,8 +9,10 @@ RegexTree::Node::~Node() {}
 
 std::unique_ptr<RegexTree::Node> RegexTree::BuildTree(std::string_view regex) {
   if (regex.length() == 1 || (regex.front() == '\\' && regex.length() == 2)) {
-    return std::make_unique<LeafNode>(regex.length() == 1 ? regex[0]
-                                                          : regex[1]);
+    auto leaf = std::make_unique<LeafNode>(
+        leaves.size(), regex.length() == 1 ? regex[0] : regex[1]);
+    leaves.emplace_back(leaf.get());
+    return leaf;
   }
 
   // ...|...
@@ -90,23 +92,43 @@ std::unique_ptr<RegexTree::Node> RegexTree::BuildTree(std::string_view regex) {
                                       BuildTree(regex.substr(1)));
 }
 
-std::unordered_set<char> RegexTree::Alphabet(RegexTree::Node* node) {
-  if (auto cnode = dynamic_cast<RegexTree::ConcatNode*>(node)) {
-    auto alphabet1 = Alphabet(cnode->left.get());
-    auto alphabet2 = Alphabet(cnode->right.get());
+std::unordered_set<char> RegexTree::Alphabet(RegexTree::Node* n) {
+  if (auto node = dynamic_cast<RegexTree::ConcatNode*>(n)) {
+    auto alphabet1 = Alphabet(node->left.get());
+    auto alphabet2 = Alphabet(node->right.get());
     alphabet1.insert(alphabet2.begin(), alphabet2.end());
     return alphabet1;
-  } else if (auto unode = dynamic_cast<RegexTree::UnionNode*>(node)) {
-    auto alphabet1 = Alphabet(unode->left.get());
-    auto alphabet2 = Alphabet(unode->right.get());
+  } else if (auto node = dynamic_cast<RegexTree::UnionNode*>(n)) {
+    auto alphabet1 = Alphabet(node->left.get());
+    auto alphabet2 = Alphabet(node->right.get());
     alphabet1.insert(alphabet2.begin(), alphabet2.end());
     return alphabet1;
-  } else if (auto snode = dynamic_cast<RegexTree::StarNode*>(node)) {
-    return Alphabet(snode->child.get());
-  } else if (auto lnode = dynamic_cast<RegexTree::LeafNode*>(node)) {
-    return std::unordered_set<char>({lnode->label});
+  } else if (auto node = dynamic_cast<RegexTree::StarNode*>(n)) {
+    return Alphabet(node->child.get());
+  } else if (auto node = dynamic_cast<RegexTree::LeafNode*>(n)) {
+    return std::unordered_set<char>({node->label});
   } else {
     // there is no 5th type of RegexTree nodes
     throw std::exception();
+  }
+}
+
+void RegexTree::CalcFollowPos(RegexTree::Node* n) {
+  if (auto node = dynamic_cast<RegexTree::UnionNode*>(n)) {
+    CalcFollowPos(node->left.get());
+    CalcFollowPos(node->right.get());
+  } else if (auto node = dynamic_cast<RegexTree::ConcatNode*>(n)) {
+    for (auto i : node->left->lastpos) {
+      leaves[i]->followpos.insert(node->right->firstpos.cbegin(),
+                                  node->right->firstpos.cend());
+    }
+    CalcFollowPos(node->left.get());
+    CalcFollowPos(node->right.get());
+  } else if (auto node = dynamic_cast<RegexTree::StarNode*>(n)) {
+    for (auto i : node->lastpos) {
+      leaves[i]->followpos.insert(node->firstpos.cbegin(),
+                                  node->firstpos.cend());
+    }
+    CalcFollowPos(node->child.get());
   }
 }
