@@ -15,8 +15,7 @@ DFA::DFA(const RegexTree& tree) {
   // add the initial state
   dstates.emplace_back(std::make_unique<State>(), tree.FirstPosRoot());
 
-  // TODO: can I not copy these?
-  auto alphabet = tree.Alphabet();
+  auto& alphabet = tree.Alphabet();
 
   for (std::size_t i = 0; i < dstates.size(); ++i) {
     if (std::any_of(
