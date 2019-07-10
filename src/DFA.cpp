@@ -4,63 +4,53 @@
 #include <algorithm>
 #include <cstddef>
 #include <memory>
-#include <queue>
 #include <utility>
 #include <vector>
 
 DFA::DFA(const RegexTree& tree) {
-  auto create_state = [this] {
-    states.emplace_back(std::make_unique<State>());
-    return states.back().get();
-  };
+  std::vector<
+      std::pair<std::unique_ptr<State>, std::unordered_set<std::size_t>>>
+      dstates;
 
-  set_alphabet(tree.Alphabet());
+  // add the initial state
+  dstates.emplace_back(std::make_unique<State>(), tree.FirstPosRoot());
 
-  std::vector<std::pair<State*, std::unordered_set<std::size_t>>> dstates;
-  std::queue<std::size_t> q;
+  // TODO: can I not copy these?
+  auto alphabet = tree.Alphabet();
 
-  dstates.emplace_back(create_state(), tree.firstpos_root());
-  q.emplace(0);
-
-  while (!q.empty()) {
-    auto state = dstates[q.front()].first;
-    auto leaves = dstates[q.front()].second;
-    q.pop();
-
-    for (auto leaf_pos : leaves) {
-      // TODO: Create special symbol for end of augmented regex (#)
-      if (tree.label(leaf_pos).to_string() == "#") {
-        accept_states.emplace_back(state, tree.leaf_regex_id(leaf_pos));
-        break;
-      }
+  for (std::size_t i = 0; i < dstates.size(); ++i) {
+    if (std::any_of(
+            dstates[i].second.cbegin(), dstates[i].second.cend(),
+            [sz = alphabet.size()](auto next_pos) { return next_pos == sz; })) {
+      dstates[i].first->MakeAcceptState();
     }
 
-    for (const auto& symbol : alphabet()) {
-      std::unordered_set<std::size_t> new_leaves;
-      for (auto leaf_pos : leaves) {
-        if (tree.label(leaf_pos) == symbol) {
-          new_leaves =
-              utility::union_sets(new_leaves, tree.followpos(leaf_pos));
+    for (const auto& character : tree.Alphabet()) {
+      std::unordered_set<std::size_t> new_next_positions;
+      for (auto next_pos : dstates[i].second) {
+        if (tree.CharAtPos(next_pos) == character) {
+          auto s = tree.FollowPos(next_pos);
+          new_next_positions.insert(s.cbegin(), s.cend());
         }
       }
 
-      if (new_leaves.empty()) continue;
+      //  // TODO: how can this happen?
+      //  if (new_next_positions.empty()) continue;
 
-      auto it = std::find_if(
+      auto old_dstate = std::find_if(
           dstates.cbegin(), dstates.cend(),
-          [new_leaves](auto elem) { return new_leaves == elem.second; });
+          [& nnp = std::as_const(new_next_positions)](const auto& dstate) {
+            return nnp == dstate.second;
+          });
 
-      if (it == dstates.end()) {
-        auto new_state = create_state();
-        q.emplace(dstates.size());
-        dstates.emplace_back(new_state, new_leaves);
-
-        state->add_transition(new_state, symbol);
+      if (old_dstate == dstates.end()) {
+        dstates.emplace_back(std::make_unique<State>(), new_next_positions);
+        dstates[i].first->AddTransition(dstates.back().first.get(), character);
       } else {
-        state->add_transition(it->first, symbol);
+        dstates[i].first->AddTransition(old_dstate->first.get(), character);
       }
     }
   }
-
-  set_states_ids();
+  // move the states ownership to the DFA
+  for (auto& state : dstates) states.emplace_back(std::move(state.first));
 }

@@ -8,7 +8,12 @@
 
 class RegexTree {
  public:
-  explicit RegexTree(std::string_view regex) : root(BuildTree(regex)) {}
+  explicit RegexTree(std::string_view regex)
+      : root(BuildTree(regex)), alphabet(Alphabet(root.get())) {}
+  const std::unordered_set<std::size_t>& FirstPosRoot() const {}
+  const std::unordered_set<char>& Alphabet() const { return alphabet; }
+  const std::unordered_set<char>& FollowPos(int pos) const {}
+  char CharAtPos(int pos) const {}
 
  private:
   class Node;
@@ -16,20 +21,23 @@ class RegexTree {
 
   enum class NodeType { CONCAT, UNION, STAR, LEAF };
 
-  struct Node {
+  class Node {
+   public:
     virtual ~Node() = 0;
-    virtual NodePtrSet FirstPos() const final { return firstpos; }
-    virtual NodePtrSet LastPos() const final { return lastpos; }
-    virtual NodePtrSet FollowPos() const final { return followpos; }
+    virtual const NodePtrSet& FirstPos() const final { return firstpos; }
+    virtual const NodePtrSet& LastPos() const final { return lastpos; }
+    virtual const NodePtrSet& FollowPos() const final { return followpos; }
     virtual bool Nullable() const final { return nullable; }
 
+   protected:
     NodePtrSet firstpos;
     NodePtrSet lastpos;
     NodePtrSet followpos;
     bool nullable;
   };
 
-  struct ConcatNode : public Node {
+  class ConcatNode : public Node {
+   public:
     explicit ConcatNode(std::unique_ptr<Node> l, std::unique_ptr<Node> r)
         : left(std::move(l)), right(std::move(r)) {
       // firstpos = ;
@@ -42,7 +50,8 @@ class RegexTree {
     std::unique_ptr<Node> right;
   };
 
-  struct UnionNode : public Node {
+  class UnionNode : public Node {
+   public:
     explicit UnionNode(std::unique_ptr<Node> l, std::unique_ptr<Node> r)
         : left(std::move(l)), right(std::move(r)) {
       // firstpos = ;
@@ -55,7 +64,7 @@ class RegexTree {
     std::unique_ptr<Node> right;
   };
 
-  struct StarNode : public Node {
+  class StarNode : public Node {
    public:
     explicit StarNode(std::unique_ptr<Node> c) : child(std::move(c)) {
       // firstpos = ;
@@ -67,7 +76,8 @@ class RegexTree {
     std::unique_ptr<Node> child;
   };
 
-  struct LeafNode : public Node {
+  class LeafNode : public Node {
+   public:
     explicit LeafNode(char l) : label(l) {
       // firstpos = ;
       // lastpos = ;
@@ -82,5 +92,5 @@ class RegexTree {
   std::unordered_set<char> Alphabet(Node* node);
 
   std::unique_ptr<Node> root;
-  std::vector<Node*> leaves;
+  std::unordered_set<char> alphabet;
 };
