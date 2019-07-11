@@ -6,6 +6,10 @@
 #include <vector>
 
 namespace {
+// this is used because the function RegexTree::FollowPos needs to return
+// a const reference to a followpos set, so it can't return an empty set
+// created locally in that function, since it will go out of scope once the
+// function returns.
 static const std::unordered_set<std::size_t> empty_set;
 }
 
@@ -57,18 +61,20 @@ class RegexTree {
    public:
     explicit ConcatNode(std::unique_ptr<Node> l, std::unique_ptr<Node> r)
         : left(std::move(l)), right(std::move(r)) {
-      if (l->nullable) {
-        firstpos.insert(l->firstpos.cbegin(), l->firstpos.cend());
-        firstpos.insert(r->firstpos.cbegin(), r->firstpos.cend());
+      if (left->nullable) {
+        firstpos.insert(left->firstpos.cbegin(), left->firstpos.cend());
+        firstpos.insert(right->firstpos.cbegin(), right->firstpos.cend());
       } else {
-        firstpos.insert(l->firstpos.cbegin(), l->firstpos.cend());
+        firstpos.insert(left->firstpos.cbegin(), left->firstpos.cend());
       }
+
       if (r->nullable) {
-        lastpos.insert(l->lastpos.cbegin(), l->lastpos.cend());
-        lastpos.insert(r->lastpos.cbegin(), r->lastpos.cend());
+        lastpos.insert(left->lastpos.cbegin(), left->lastpos.cend());
+        lastpos.insert(right->lastpos.cbegin(), right->lastpos.cend());
       } else {
-        lastpos.insert(r->lastpos.cbegin(), r->lastpos.cend());
+        lastpos.insert(right->lastpos.cbegin(), right->lastpos.cend());
       }
+
       nullable = left->nullable && right->nullable;
     }
 
@@ -80,10 +86,12 @@ class RegexTree {
    public:
     explicit UnionNode(std::unique_ptr<Node> l, std::unique_ptr<Node> r)
         : left(std::move(l)), right(std::move(r)) {
-      firstpos.insert(l->firstpos.cbegin(), l->firstpos.cend());
-      firstpos.insert(r->firstpos.cbegin(), r->firstpos.cend());
-      lastpos.insert(l->lastpos.cbegin(), l->lastpos.cend());
-      lastpos.insert(l->lastpos.cbegin(), l->lastpos.cend());
+      firstpos.insert(left->firstpos.cbegin(), left->firstpos.cend());
+      firstpos.insert(right->firstpos.cbegin(), right->firstpos.cend());
+
+      lastpos.insert(left->lastpos.cbegin(), left->lastpos.cend());
+      lastpos.insert(left->lastpos.cbegin(), left->lastpos.cend());
+
       nullable = left->nullable || right->nullable;
     }
 
@@ -94,8 +102,8 @@ class RegexTree {
   class StarNode : public Node {
    public:
     explicit StarNode(std::unique_ptr<Node> c) : child(std::move(c)) {
-      firstpos = c->firstpos;
-      lastpos = c->lastpos;
+      firstpos = child->firstpos;
+      lastpos = child->lastpos;
       nullable = true;
     }
 
