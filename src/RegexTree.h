@@ -20,6 +20,7 @@ class RegexTree {
     CalcFollowPos(root.get());
 
     // the loop below is added to avoid adding the nodes 'end' and 'concat_node'
+    // to the tree.
     //
     //     concat_node
     //         /\
