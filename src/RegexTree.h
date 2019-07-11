@@ -5,20 +5,40 @@
 #include <unordered_set>
 #include <vector>
 
+namespace {
+static const std::unordered_set<std::size_t> empty_set;
+}
+
 class RegexTree {
  public:
   explicit RegexTree(std::string_view regex)
       : root(BuildTree(regex)), alphabet(Alphabet(root.get())) {
     CalcFollowPos(root.get());
+
+    // the loop below is added to avoid adding the nodes 'end' and 'concat_node'
+    //
+    //     concat_node
+    //         /\
+    //        /  \
+    //       /    \
+    //    root    end
+    //
+    // if the tree root is concatenated with the regex end node, and we run
+    // CalcFollowPos(concat_node), the result will be equal to running the
+    // following loop:
+    for (auto i : root->lastpos) leaves[i]->followpos.emplace(EndPos());
   }
+  const std::unordered_set<char>& Alphabet() const { return alphabet; }
   const std::unordered_set<std::size_t>& FirstPosRoot() const {
     return root->firstpos;
   }
-  const std::unordered_set<std::size_t>& FollowPos(int pos) const {
-    return leaves[pos]->followpos;
+  const std::unordered_set<std::size_t>& FollowPos(std::size_t pos) const {
+    return pos < leaves.size() ? leaves[pos]->followpos : empty_set;
   }
-  const std::unordered_set<char>& Alphabet() const { return alphabet; }
-  char CharAtPos(int pos) const { return leaves[pos]->label; }
+  bool CharAtPos(char character, std::size_t pos) const {
+    return pos < leaves.size() ? leaves[pos]->label == character : false;
+  }
+  std::size_t EndPos() const { return leaves.size(); }
 
  private:
   class Node;

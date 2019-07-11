@@ -29,9 +29,11 @@ DFA::DFA(const RegexTree& tree) {
   auto& alphabet = tree.Alphabet();
 
   for (std::size_t i = 0; i < dstates.size(); ++i) {
-    if (std::any_of(
-            dstates[i].followpos.cbegin(), dstates[i].followpos.cend(),
-            [sz = alphabet.size()](auto next_pos) { return next_pos == sz; })) {
+    // accepting states have the end of the regex in their followpos
+    if (std::any_of(dstates[i].followpos.cbegin(), dstates[i].followpos.cend(),
+                    [endpos = tree.EndPos()](auto next_pos) {
+                      return next_pos == endpos;
+                    })) {
       dstates[i].state->MakeAcceptState();
     }
 
@@ -39,7 +41,7 @@ DFA::DFA(const RegexTree& tree) {
       std::unordered_set<std::size_t> new_next_positions;
 
       for (auto next_pos : dstates[i].followpos) {
-        if (tree.CharAtPos(next_pos) == character) {
+        if (tree.CharAtPos(character, next_pos)) {
           auto followpos = tree.FollowPos(next_pos);
           new_next_positions.insert(followpos.cbegin(), followpos.cend());
         }
