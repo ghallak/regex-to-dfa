@@ -69,7 +69,7 @@ class RegexTree {
         firstpos.insert(left->firstpos.cbegin(), left->firstpos.cend());
       }
 
-      if (r->nullable) {
+      if (right->nullable) {
         lastpos.insert(left->lastpos.cbegin(), left->lastpos.cend());
         lastpos.insert(right->lastpos.cbegin(), right->lastpos.cend());
       } else {
