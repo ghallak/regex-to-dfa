@@ -56,7 +56,7 @@ std::unique_ptr<RegexTree::Node> RegexTree::BuildTree(std::string_view regex) {
       // (...)*
       else {
         return std::make_unique<StarNode>(
-            BuildTree(regex.substr(1, close_paren_idx)));
+            BuildTree(regex.substr(1, close_paren_idx - 1)));
       }
     }
     // (...)...
