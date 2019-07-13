@@ -128,7 +128,7 @@ class RegexTree {
   std::unordered_set<char> Alphabet(Node* node);
   void CalcFollowPos(Node* node);
 
+  std::vector<LeafNode*> leaves;
   std::unique_ptr<Node> root;
   std::unordered_set<char> alphabet;
-  std::vector<LeafNode*> leaves;
 };
