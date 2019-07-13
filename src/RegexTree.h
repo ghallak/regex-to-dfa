@@ -91,7 +91,7 @@ class RegexTree {
       firstpos.insert(right->firstpos.cbegin(), right->firstpos.cend());
 
       lastpos.insert(left->lastpos.cbegin(), left->lastpos.cend());
-      lastpos.insert(left->lastpos.cbegin(), left->lastpos.cend());
+      lastpos.insert(right->lastpos.cbegin(), right->lastpos.cend());
 
       nullable = left->nullable || right->nullable;
     }
