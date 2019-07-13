@@ -113,14 +113,13 @@ class RegexTree {
 
   class LeafNode : public Node {
    public:
-    explicit LeafNode(std::size_t p, char l) : pos(p), label(l) {
+    explicit LeafNode(std::size_t pos, char l) : label(l) {
       firstpos.emplace(pos);
       lastpos.emplace(pos);
       nullable = false;
     }
 
     std::unordered_set<std::size_t> followpos;
-    std::size_t pos;
     char label;
   };
 
