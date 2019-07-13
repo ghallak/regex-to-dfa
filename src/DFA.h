@@ -2,24 +2,27 @@
 
 #include "RegexTree.h"
 
+#include <string_view>
 #include <vector>
 
 class DFA {
  public:
   class State {
+   private:
+    struct Transition;
+
    public:
     void AddTransition(State* state, char c) {
       transitions.emplace_back(state, c);
     }
     bool IsAcceptState() const { return is_accept_state; }
     void MakeAcceptState() { is_accept_state = true; }
+    const std::vector<Transition>& Transitions() const { return transitions; }
 
    private:
-    class Transition {
-     public:
+    struct Transition {
       Transition(const State* s, char c) : state(s), character(c) {}
 
-     private:
       const State* state;
       char character;
     };
@@ -29,6 +32,7 @@ class DFA {
   };
 
   explicit DFA(const RegexTree& tree);
+  void CreateDotFile(std::string_view filename) const;
 
  private:
   std::vector<std::unique_ptr<State>> states;

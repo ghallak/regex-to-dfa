@@ -11,7 +11,7 @@ namespace {
 // created locally in that function, since it will go out of scope once the
 // function returns.
 static const std::unordered_set<std::size_t> empty_set;
-}
+}  // namespace
 
 class RegexTree {
  public:

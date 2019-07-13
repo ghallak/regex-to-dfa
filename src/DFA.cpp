@@ -3,7 +3,11 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <fstream>
 #include <memory>
+#include <string>
+#include <string_view>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -67,4 +71,33 @@ DFA::DFA(const RegexTree& tree) {
 
   // move the states ownership to the DFA
   for (auto& dstate : dstates) states.emplace_back(std::move(dstate.state));
+}
+
+void DFA::CreateDotFile(std::string_view filename) const {
+  std::ofstream out(filename.data());
+  out << "digraph finite_state_machine {" << '\n'
+      << "  rankdir=LR;" << '\n'
+      << "  size=\"8,5\"" << '\n'
+      << "  node [shape = circle]; q0" << '\n';
+
+  std::unordered_map<const State*, std::size_t> state_id;
+  for (std::size_t i = 0; i < states.size(); ++i) {
+    auto p = states[i].get();
+    for (const auto& trans : p->Transitions()) {
+      state_id.try_emplace(p, state_id.size());
+      state_id.try_emplace(trans.state, state_id.size());
+      auto start_state = "q" + std::to_string(state_id[p]);
+      auto end_state = "q" + std::to_string(state_id[trans.state]);
+      auto edge_label = trans.character;
+
+      if (trans.state->IsAcceptState()) {
+        out << "node [shape = doublecircle];" << '\n';
+      } else {
+        out << "node [shape = circle];" << '\n';
+      }
+      out << "  " << start_state << " -> " << end_state << " [ label = \""
+          << edge_label << "\" ];" << '\n';
+    }
+  }
+  out << "}" << '\n';
 }
