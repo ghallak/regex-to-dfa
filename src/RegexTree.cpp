@@ -7,7 +7,8 @@
 
 RegexTree::Node::~Node() {}
 
-std::unique_ptr<RegexTree::Node> RegexTree::BuildTree(std::string_view regex) {
+std::unique_ptr<RegexTree::Node> RegexTree::BuildTree(std::string_view regex,
+                                                      bool star) {
   if (regex.length() == 1 || (regex.front() == '\\' && regex.length() == 2)) {
     auto leaf = std::make_unique<LeafNode>(
         leaves.size(), regex.length() == 1 ? regex[0] : regex[1]);
@@ -32,64 +33,60 @@ std::unique_ptr<RegexTree::Node> RegexTree::BuildTree(std::string_view regex) {
     }
   }
 
-  if (regex.front() == '(') {
-    const auto close_paren_idx = [&] {
-      int open_parens = 1;
-      for (std::size_t i = 1; i < regex.length(); ++i) {
-        open_parens += regex[i] == '(';
-        open_parens -= regex[i] == ')';
-        if (open_parens == 0) return i;
-      }
-      // unbalanced parens
-      throw std::exception();
-    }();
-
-    // (...)*...
-    if (close_paren_idx + 1 < regex.length() &&
-        regex[close_paren_idx + 1] == '*') {
-      // (...)*...
-      if (close_paren_idx + 2 < regex.length()) {
-        return std::make_unique<ConcatNode>(
-            BuildTree(regex.substr(0, close_paren_idx + 2)),
-            BuildTree(regex.substr(close_paren_idx + 2)));
-      }
-      // (...)*
-      else {
-        return std::make_unique<StarNode>(
-            BuildTree(regex.substr(1, close_paren_idx - 1)));
-      }
+  // TODO: support escaping `*`, `(`, `)`, and `|` with `\`
+  switch (regex.back()) {
+    case '*': {
+      return BuildTree(regex.substr(0, regex.length() - 1), true);
     }
-    // (...)...
-    else {
-      // (...)...
-      if (close_paren_idx + 1 < regex.length()) {
-        return std::make_unique<ConcatNode>(
-            BuildTree(regex.substr(1, close_paren_idx)),
-            BuildTree(regex.substr(close_paren_idx + 1)));
-      }
+    case ')': {
+      const auto open_paren_idx = [&] {
+        int close_parens = 1;
+        for (std::size_t i = regex.length() - 2; i >= 0; --i) {
+          close_parens += regex[i] == ')';
+          close_parens -= regex[i] == '(';
+          if (close_parens == 0) return i;
+        }
+        // unbalanced parens
+        throw std::exception();
+      }();
+
       // (...)
+      if (open_paren_idx == 0) {
+        if (star) {
+          return std::make_unique<StarNode>(
+              BuildTree(regex.substr(1, regex.length() - 2)));
+        } else {
+          return BuildTree(regex.substr(1, regex.length() - 2));
+        }
+      }
+      // ...(...)
       else {
-        return BuildTree(regex.substr(1, close_paren_idx));
+        auto left = BuildTree(regex.substr(0, open_paren_idx));
+        auto right = [&]() -> std::unique_ptr<Node> {
+          if (star) {
+            return std::make_unique<StarNode>(
+                BuildTree(regex.substr(open_paren_idx)));
+          } else {
+            return BuildTree(regex.substr(open_paren_idx));
+          }
+        }();
+        return std::make_unique<ConcatNode>(std::move(left), std::move(right));
       }
     }
-  }
-
-  // .*...
-  if (regex.length() > 1 && regex[0] != '\\' && regex[1] == '*') {
-    // .*...
-    if (regex.length() > 2) {
-      return std::make_unique<ConcatNode>(BuildTree(regex.substr(0, 2)),
-                                          BuildTree(regex.substr(2)));
+    default: {
+      // ...
+      auto left = BuildTree(regex.substr(0, regex.length() - 1));
+      auto right = [&]() -> std::unique_ptr<Node> {
+        if (star) {
+          return std::make_unique<StarNode>(
+              BuildTree(regex.substr(regex.length() - 1)));
+        } else {
+          return BuildTree(regex.substr(regex.length() - 1));
+        }
+      }();
+      return std::make_unique<ConcatNode>(std::move(left), std::move(right));
     }
-    // .*
-    else {
-      return std::make_unique<StarNode>(BuildTree(regex.substr(0, 1)));
-    }
   }
-
-  // ...
-  return std::make_unique<ConcatNode>(BuildTree(regex.substr(0, 1)),
-                                      BuildTree(regex.substr(1)));
 }
 
 std::unordered_set<char> RegexTree::Alphabet(RegexTree::Node* n) {

@@ -62,18 +62,14 @@ class RegexTree {
    public:
     explicit ConcatNode(std::unique_ptr<Node> l, std::unique_ptr<Node> r)
         : left(std::move(l)), right(std::move(r)) {
+      firstpos.insert(left->firstpos.cbegin(), left->firstpos.cend());
       if (left->nullable) {
-        firstpos.insert(left->firstpos.cbegin(), left->firstpos.cend());
         firstpos.insert(right->firstpos.cbegin(), right->firstpos.cend());
-      } else {
-        firstpos.insert(left->firstpos.cbegin(), left->firstpos.cend());
       }
 
+      lastpos.insert(right->lastpos.cbegin(), right->lastpos.cend());
       if (right->nullable) {
         lastpos.insert(left->lastpos.cbegin(), left->lastpos.cend());
-        lastpos.insert(right->lastpos.cbegin(), right->lastpos.cend());
-      } else {
-        lastpos.insert(right->lastpos.cbegin(), right->lastpos.cend());
       }
 
       nullable = left->nullable && right->nullable;
@@ -123,7 +119,7 @@ class RegexTree {
     char label;
   };
 
-  std::unique_ptr<Node> BuildTree(std::string_view regex);
+  std::unique_ptr<Node> BuildTree(std::string_view regex, bool star = false);
   std::unordered_set<char> Alphabet(Node* node);
   void CalcFollowPos(Node* node);
 
