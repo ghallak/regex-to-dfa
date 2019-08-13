@@ -30,6 +30,9 @@ class DFA {
   };
 
   explicit DFA(const RegexTree& tree);
+
+  /// Generate a dot file that can be used to create a graphical representation
+  /// of the DFA.
   void CreateDotFile(std::string_view filename) const;
 
  private:

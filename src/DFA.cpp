@@ -12,6 +12,8 @@
 #include <vector>
 
 namespace {
+// a dstate is a state paired with its follow pos, this is needed when the dfa
+// is being created.
 struct DState {
   DState(std::unique_ptr<DFA::State> sp,
          const std::unordered_set<std::size_t>& fp)
