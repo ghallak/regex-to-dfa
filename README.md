@@ -8,25 +8,20 @@ The implemented algorithms are described in the book "Compilers: Principles, Tec
 * 3.9.4 Computing `followpos`
 * 3.9.5 Converting a Regular Expression Directly to a DFA
 
-## Building
+## Building and Running
 
 ```
 git clone https://github.com/ghallak/regex-to-dfa.git
 cd regex-to-dfa
 make build
-```
-
-## Running
-
-```
-./regex-to-dfa
+make run
 ```
 
 ## Example
 
 In the file [Main.cpp](src/Main.cpp), this example will create a DFA from the regular expression `(a|b)*abb` and generata a dot file for the created DFA:
 
-```
+```cpp
 #include "DFA.h"
 #include "RegexTree.h"
 
