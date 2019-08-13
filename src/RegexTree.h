@@ -15,10 +15,12 @@ static const std::unordered_set<std::size_t> empty_set;
 
 class RegexTree {
  public:
-  explicit RegexTree(std::string_view regex)
-      : root(ConcatEndNode(BuildTree(regex))), alphabet(Alphabet(root.get())) {
+  explicit RegexTree(std::string_view regex, std::string_view type)
+      : root(ConcatEndNode(BuildTree(regex), type)),
+        alphabet(Alphabet(root.get())) {
     CalcFollowPos(root.get());
   }
+
   /// Return an unordered_set of unique characters that exist in the regex.
   const std::unordered_set<char>& Alphabet() const { return alphabet; }
 
@@ -115,13 +117,19 @@ class RegexTree {
 
   class EndNode : public Node {
    public:
-    explicit EndNode(std::size_t end_pos) { firstpos.insert(end_pos); }
+    explicit EndNode(std::size_t end_pos, std::string_view t) : type(t) {
+      firstpos.insert(end_pos);
+    }
+
+   private:
+    std::string_view type;
   };
 
   std::unique_ptr<Node> BuildTree(std::string_view regex, bool star = false);
 
   /// Create an EndNode and concatenate it with the root of the regex tree.
-  std::unique_ptr<Node> ConcatEndNode(std::unique_ptr<RegexTree::Node> root);
+  std::unique_ptr<Node> ConcatEndNode(std::unique_ptr<RegexTree::Node> root,
+                                      std::string_view type);
 
   std::unordered_set<char> Alphabet(Node* node);
   void CalcFollowPos(Node* node);

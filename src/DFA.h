@@ -32,6 +32,9 @@ class DFA {
   };
 
   explicit DFA(const RegexTree& tree);
+
+  /// Create a dot file that can be used to generate a graphical representation
+  /// of the DFA states and transitions.
   void CreateDotFile(std::string_view filename) const;
 
  private:
