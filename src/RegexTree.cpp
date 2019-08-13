@@ -112,7 +112,8 @@ std::unordered_set<char> RegexTree::Alphabet(RegexTree::Node* n) {
   }
 }
 
-std::unique_ptr<RegexTree::Node> RegexTree::ConcatEndNode(std::unique_ptr<RegexTree::Node> root) {
+std::unique_ptr<RegexTree::Node> RegexTree::ConcatEndNode(
+    std::unique_ptr<RegexTree::Node> root) {
   auto end_node = std::make_unique<EndNode>(EndPos());
   return std::make_unique<ConcatNode>(std::move(root), std::move(end_node));
 }

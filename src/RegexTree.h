@@ -115,9 +115,7 @@ class RegexTree {
 
   class EndNode : public Node {
    public:
-    explicit EndNode(std::size_t end_pos) {
-      firstpos.insert(end_pos);
-    }
+    explicit EndNode(std::size_t end_pos) { firstpos.insert(end_pos); }
   };
 
   std::unique_ptr<Node> BuildTree(std::string_view regex, bool star = false);
