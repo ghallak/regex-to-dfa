@@ -57,9 +57,6 @@ class RegexTree {
   std::size_t EndPos() const { return leaves.size(); }
 
  private:
-  class Node;
-  enum class NodeType { CONCAT, UNION, STAR, LEAF };
-
   class Node {
    public:
     virtual ~Node() = 0;
