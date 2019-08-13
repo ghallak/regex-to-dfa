@@ -104,10 +104,17 @@ std::unordered_set<char> RegexTree::Alphabet(RegexTree::Node* n) {
     return Alphabet(node->child.get());
   } else if (auto node = dynamic_cast<RegexTree::LeafNode*>(n)) {
     return std::unordered_set<char>({node->label});
+  } else if (auto node = dynamic_cast<RegexTree::EndNode*>(n)) {
+    return std::unordered_set<char>();
   } else {
-    // there is no 5th type of RegexTree nodes
+    // there is no 6th type of RegexTree nodes
     throw std::exception();
   }
+}
+
+std::unique_ptr<RegexTree::Node> RegexTree::ConcatEndNode(std::unique_ptr<RegexTree::Node> root) {
+  auto end_node = std::make_unique<EndNode>(EndPos());
+  return std::make_unique<ConcatNode>(std::move(root), std::move(end_node));
 }
 
 void RegexTree::CalcFollowPos(RegexTree::Node* n) {
