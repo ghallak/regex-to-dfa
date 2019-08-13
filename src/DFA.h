@@ -9,7 +9,12 @@ class DFA {
  public:
   class State {
    private:
-    struct Transition;
+    struct Transition {
+      Transition(const State* s, char c) : state(s), character(c) {}
+
+      const State* state;
+      char character;
+    };
 
    public:
     void AddTransition(State* state, char c) {
@@ -20,13 +25,6 @@ class DFA {
     const std::vector<Transition>& Transitions() const { return transitions; }
 
    private:
-    struct Transition {
-      Transition(const State* s, char c) : state(s), character(c) {}
-
-      const State* state;
-      char character;
-    };
-
     std::vector<Transition> transitions;
     bool is_accept_state;
   };
