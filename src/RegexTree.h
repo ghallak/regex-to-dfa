@@ -33,16 +33,27 @@ class RegexTree {
     // following loop:
     for (auto i : root->lastpos) leaves[i]->followpos.emplace(EndPos());
   }
+  /// Return an unordered_set of unique characters that exist in the regex.
   const std::unordered_set<char>& Alphabet() const { return alphabet; }
+
+  /// Return FirstPos set for the root of the regex tree.
   const std::unordered_set<std::size_t>& FirstPosRoot() const {
     return root->firstpos;
   }
+
+  /// Return the FollowPos set for a leaf in the regex tree given its position.
   const std::unordered_set<std::size_t>& FollowPos(std::size_t pos) const {
     return pos < leaves.size() ? leaves[pos]->followpos : empty_set;
   }
+
+  /// Return true if the label of the leaf at the given position equals the
+  /// given character, and return false otherwise.
   bool CharAtPos(char character, std::size_t pos) const {
     return pos < leaves.size() ? leaves[pos]->label == character : false;
   }
+
+  /// Return the position of the end of the regex, which equals the number of
+  /// leaves in the regex tree.
   std::size_t EndPos() const { return leaves.size(); }
 
  private:
